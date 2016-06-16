@@ -11,7 +11,7 @@
             font-family: 'Roboto',sans-serif;
         }
         .jumbotron{
-            width: 450px;
+            width: 600px;
             text-align: center;
             margin-left: auto;
             margin-right: auto;
@@ -23,7 +23,11 @@
             margin-top: 20px;
             margin-bottom: 20px;
         }
-        input{
+        .selecionado{
+            background-color: #1f7e9a;
+        }
+        .negrito{
+            font-weight: bold;
         }
     </style>
     <script src="lib/angular/angular.min.js"></script>
@@ -32,8 +36,8 @@
         angular.module("WebChat").controller("WebChatMainCtrl", function($scope){
             $scope.msg = "Lista de Funcionários";
             $scope.funcionarios = [
-                {nome: "Junior Mendonça", empresa:{nome: "Gbarbosa", codigo: 1}},
-                {nome: "Carlos Augusto", empresa:{nome: "TAM", codigo: 2}}
+                {nome: "Junior Mendonça", empresa:{nome: "Gbarbosa", codigo: 1, categoria: "Varejo"}, admissao: new Date()},
+                {nome: "Carlos Augusto", empresa:{nome: "TAM", codigo: 2, categoria: "Comp. Aérea"}, admissao: new Date()}
             ];
             $scope.empresas = [
                 {nome: "Oi", codigo: 31, categoria: "Fixo/Celular"},
@@ -45,8 +49,24 @@
             ];
 
             $scope.adicionarUsuario = function(usuario){
+                usuario.admissao = new Date();
                 $scope.funcionarios.push($scope.funcionario);
                 delete $scope.funcionario;
+                $scope.funcionarioForm.$setPristine();
+            };
+            $scope.apagarUsuario = function(){
+                $scope.funcionarios = $scope.funcionarios.filter(function(funcionario){
+                   if(!funcionario.selecionado) return funcionario;
+                });
+            };
+            $scope.isSelecionado = function(){
+                return $scope.funcionarios.some(function(funcionario){
+                    return funcionario.selecionado;
+                });
+            };
+            $scope.ordenar = function(criterio){
+                $scope.criterio = criterio;
+                $scope.direcao = !$scope.direcao;
             };
         });
     </script>
@@ -54,21 +74,33 @@
 <body>
     <div class="jumbotron" ng-controller="WebChatMainCtrl">
         <h3>{{msg}}</h3>
+        <input type="text" class="form-control" ng-model="busca" placeholder="Busca"/>
         <table class="table table-striped">
             <tr>
-                <th style="text-align: center">Nome</th>
-                <th style="text-align: center">Empresa</th>
+                <th id="check" style="text-align: center"></th>
+                <th style="text-align: center"><a href="" ng-click="ordenar('nome')">Nome</a></th>
+                <th style="text-align: center"><a href="" ng-click="ordenar('empresa')">Empresa</a></th>
+                <th style="text-align: center"><a href="" ng-click="ordenar('admissao')">Data de admissão</a></th>
             </tr>
-            <tr ng-repeat="funcionario in funcionarios">
+            <tr ng-class="{selecionado: funcionario.selecionado, negrito: funcionario.selecionado}" ng-repeat="funcionario in funcionarios | filter:busca | orderBy: criterio:direcao">
+                <td>
+                    <input type="checkbox" ng-model="funcionario.selecionado"/>
+                </td>
                 <td>{{funcionario.nome}}</td>
                 <td>{{funcionario.empresa.nome}}</td>
+                <td>{{funcionario.admissao | date:'dd/MM/yyyy HH:mm'}}</td>
             </tr>
         </table>
-        <input type="text" class="form-control" ng-model="funcionario.nome" placeholder="Nome"/>
-        <select class="form-control" ng-model="funcionario.empresa" ng-options="empresa.nome group by empresa.categoria for empresa in empresas">
-            <option value="">Selecione uma operadora</option>
-        </select>
-        <button class="btn btn-primary btn-block" ng-click="adicionarUsuario(funcionario)" ng-disabled="!funcionario.nome">Adicionar funcionário</button>
+        <form name="funcionarioForm">
+            <input type="text" class="form-control" ng-model="funcionario.nome" placeholder="Nome" ng-required="true"/>
+            <select class="form-control" ng-model="funcionario.empresa" ng-options="empresa.nome group by empresa.categoria for empresa in empresas | orderBy: 'nome'" ng-required="true">
+                <option value="">Selecione uma operadora</option>
+            </select>
+        </form>
+            <!--<div class="alert alert-danger" ng-show="funcionarioForm.$invalid">Por favor, preencha os campos!</div>-->
+            <button class="btn btn-primary btn-block" ng-click="adicionarUsuario(funcionario)" ng-disabled="funcionarioForm.$invalid">Adicionar funcionário</button>
+            <button class="btn btn-danger btn-block" ng-click="apagarUsuario()" ng-if="isSelecionado()" ng-disabled="!isSelecionado()">Apagar funcionário(s)</button>
     </div>
+    <span ng-include="'footer.html'"></span>
 </body>
 </html>
